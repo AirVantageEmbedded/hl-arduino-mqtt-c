@@ -81,18 +81,19 @@ char*                           _offset2 = NULL;
 int                             buttonState = 0;         // variable for reading the pushbutton status
 unsigned long                   time = 0;
 unsigned long                   period_send_gps = 0;
-unsigned long                   emergencyDetected;
+unsigned long                   emergencyDetected = 0;
 
 void setup()
 {
     pinMode(LED_PIN, OUTPUT);
     pinMode(BUTTON_PIN, INPUT);   
     
-    attachInterrupt(0, blink, CHANGE);
+    //Put the button on the pin 21 to generate the interrupt
+    attachInterrupt(2, interrupt, HIGH );
     
     digitalWrite(LED_PIN, LOW);  
       
-    period_send_gps= millis() +_delay;
+    period_send_gps = millis() +_delay;
     
     Serial.begin(BAUDRATE);                                 //Select the working baud rate for the HL Module
     //memset(&frameGLL,0,64);
@@ -226,15 +227,13 @@ void doCustomSetup()
 void doCustomLoopTask()
 {
     //Replace the below sample task by your code to be executed on a regular basis
-          
-    buttonState = digitalRead(BUTTON_PIN);
-  
-    if (buttonState == HIGH) 
-    {    
-      // turn LED on:    
-      digitalWrite(LED_PIN, HIGH);  
-      postData("avep_demo.alarm_status", 1);
-      //_mqttClient.emergencyCall("+33698977572");
+    
+    if(emergencyDetected != 0)
+    {
+      emergencyDetected = 0;
+      digitalWrite(LED_PIN, HIGH);
+       postData("avep_demo.alarm_status", 1); 
+    //_mqttClient.emergencyCall("+33698977572");
       _delay = 5000;
     }
   
@@ -270,5 +269,5 @@ void messageArrived(const char* szKey, const char* szValue, const char* szTimest
 
 void interrupt()
 {
-  state = !state;
+  emergencyDetected = 1;
 }
